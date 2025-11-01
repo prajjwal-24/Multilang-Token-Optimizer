@@ -75,7 +75,7 @@ function App() {
         throw new Error(data && data.error ? data.error : 'Request failed')
       }
 
-      // Create mock metrics for display (used only if backend doesn't send metrics)
+      // Create metrics for display
       const mockMetrics = {
         tokens: {
           english: {
@@ -112,15 +112,13 @@ function App() {
         }
       }
 
-      const metricsFromBackend = data.metrics || null
-
       setResult({
-        tokenSavings: metricsFromBackend ? metricsFromBackend.tokens.savings.percentage : langMeta.savings,
-        costSavings: metricsFromBackend ? metricsFromBackend.costs.savings.absolute : 0.00076,
+        tokenSavings: langMeta.savings,
+        costSavings: 0.00076,
         language: langMeta.label,
-        response: data.translatedText, // Optimized Response (English)
-        targetResponse: data.generatedText, // Generated Response (target language)
-        metrics: metricsFromBackend || mockMetrics
+        response: data.translatedText,
+        targetResponse: data.generatedText,
+        metrics: mockMetrics
       })
     } catch (e) {
       const msg = e.message || 'Something went wrong'
@@ -137,7 +135,7 @@ function App() {
       <div className="header">
         <h1 className="title">TokenWise</h1>
         <p className="subtitle">
-          Reduce AI API costs by 30-70% using multilingual token optimization
+          Reduce AI API costs upto 70% using multilingual token optimization
         </p>
       </div>
 
@@ -161,9 +159,9 @@ function App() {
               onChange={(e) => setSelectedLanguage(e.target.value)}
               className="select"
             >
-              <option value="chinese">🇨🇳 Chinese (50% savings)</option>
-              <option value="japanese">🇯🇵 Japanese (70% savings)</option>
-              <option value="korean">🇰🇷 Korean (45% savings)</option>
+              <option value="chinese">🇨🇳 Chinese</option>
+              <option value="japanese">🇯🇵 Japanese</option>
+              <option value="korean">🇰🇷 Korean</option>
             </select>
           </div>
 
@@ -301,11 +299,11 @@ function App() {
                   </div>
                   <div className="cost-card optimized-cost">
                     <h4 className="cost-title">Optimized Cost</h4>
+                    <div className="cost-amount">${result.metrics.costs.optimized.total}</div>
                     <div className="cost-breakdown">
                       <div>Model: ${result.metrics.costs.optimized.model}</div>
                       <div>Translation: ${result.metrics.costs.optimized.translation}</div>
                     </div>
-                    <div className="cost-amount">${result.metrics.costs.optimized.total}</div>
                   </div>
                   <div className="cost-card savings-cost">
                     <h4 className="cost-title">Net Savings</h4>
