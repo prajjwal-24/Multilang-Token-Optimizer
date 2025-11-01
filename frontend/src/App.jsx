@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 function App() {
   const [query, setQuery] = useState('')
   const [selectedLanguage, setSelectedLanguage] = useState('chinese')
-  const [selectedModel, setSelectedModel] = useState('claude-haiku')
+  const [selectedModel, setSelectedModel] = useState('')
+  const [models, setModels] = useState([])
+  const [modelsLoading, setModelsLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
@@ -14,19 +16,40 @@ function App() {
     korean: { code: 'ko', label: 'Korean', savings: 45 }
   }
 
-  const modelToBedrockId = (modelKey) => {
-    if (modelKey === 'claude-haiku') return 'anthropic.claude-3-haiku-20240307-v1:0'
-    if (modelKey === 'cohere') return 'anthropic.claude-3-haiku-20240307-v1:0'
-    if (modelKey === 'mistral') return 'anthropic.claude-3-haiku-20240307-v1:0'
-    return 'anthropic.claude-3-haiku-20240307-v1:0'
-  }
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        setModelsLoading(true)
+        const resp = await fetch('http://127.0.0.1:5000/api/bedrock/models')
+        const data = await resp.json()
+        if (resp.ok && data && Array.isArray(data.models)) {
+          // Filter to text models only (output modalities includes "TEXT")
+          const textModels = data.models.filter(m => (m.outputModalities || []).includes('TEXT'))
+          setModels(textModels)
+          // Pick a sensible default if none selected
+          if (!selectedModel) {
+            const haiku = textModels.find(m => m.modelId.startsWith('anthropic.claude-3-haiku'))
+            setSelectedModel(haiku ? haiku.modelId : (textModels[0]?.modelId || ''))
+          }
+        } else {
+          setModels([])
+        }
+      } catch (e) {
+        setModels([])
+      } finally {
+        setModelsLoading(false)
+      }
+    }
+    loadModels()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleOptimize = async () => {
     try {
       setError('')
       setLoading(true)
       const langMeta = languageToCode[selectedLanguage]
-      const modelId = modelToBedrockId(selectedModel)
+      const modelId = selectedModel || 'anthropic.claude-3-haiku-20240307-v1:0'
 
       const resp = await fetch('http://127.0.0.1:5000/api/bedrock/generate-translate', {
         method: 'POST',
@@ -43,7 +66,7 @@ function App() {
         throw new Error(data && data.error ? data.error : 'Request failed')
       }
 
-      // Create mock metrics for display
+      // Create mock metrics for display (used only if backend doesn't send metrics)
       const mockMetrics = {
         tokens: {
           english: {
@@ -80,13 +103,15 @@ function App() {
         }
       }
 
+      const metricsFromBackend = data.metrics || null
+
       setResult({
-        tokenSavings: langMeta.savings,
-        costSavings: 0.00076,
+        tokenSavings: metricsFromBackend ? metricsFromBackend.tokens.savings.percentage : langMeta.savings,
+        costSavings: metricsFromBackend ? metricsFromBackend.costs.savings.absolute : 0.00076,
         language: langMeta.label,
         response: data.translatedText, // Optimized Response (English)
         targetResponse: data.generatedText, // Generated Response (target language)
-        metrics: mockMetrics
+        metrics: metricsFromBackend || mockMetrics
       })
     } catch (e) {
       setError(e.message || 'Something went wrong')
@@ -138,9 +163,15 @@ function App() {
               onChange={(e) => setSelectedModel(e.target.value)}
               className="select"
             >
-              <option value="claude-haiku">Claude 3 Haiku</option>
-              <option value="cohere">Cohere Command R</option>
-              <option value="mistral">Mistral 8x7B</option>
+              {modelsLoading && <option>Loading models...</option>}
+              {!modelsLoading && models.length === 0 && (
+                <option value="anthropic.claude-3-haiku-20240307-v1:0">Claude 3 Haiku (fallback)</option>
+              )}
+              {!modelsLoading && models.map(m => (
+                <option key={m.modelId} value={m.modelId}>
+                  {m.providerName} - {m.modelName || m.modelId}
+                </option>
+              ))}
             </select>
           </div>
         </div>
