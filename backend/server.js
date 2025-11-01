@@ -120,6 +120,11 @@ function extractBedrockUsage(modelId, payload) {
   return { input: 0, output: 0, total: 0 };
 }
 
+function isNonGenerativeModel(modelId) {
+  const id = (modelId || '').toLowerCase();
+  return id.includes('rerank') || id.includes('embed') || id.includes('embedding');
+}
+
 async function bedrockGenerateText({ text, language, model, region }) {
   const client = new BedrockRuntimeClient({ region });
   const prompt = `You are a helpful assistant. Read the following English input and respond entirely in ${language}. If translation is appropriate, translate; if the input asks for tasks, perform them and provide the answer in ${language}. Keep the response clear and natural.\n\nInput: ${text}`;
@@ -224,6 +229,9 @@ app.post('/api/bedrock/generate', async (req, res) => {
       return res.status(400).json({ error: 'Parameter "model" (non-empty string) is required.' });
     }
 
+    if (isNonGenerativeModel(model)) {
+      return res.status(400).json({ error: 'Selected model is non-generative (e.g., rerank/embedding). Please choose a text generation model.' });
+    }
     const region = process.env.AWS_REGION || 'us-east-1';
     const out = await bedrockGenerateText({ text, language, model, region });
     if (!out || !out.text) {
@@ -261,6 +269,9 @@ app.post('/api/bedrock/generate-translate', async (req, res) => {
       return res.status(400).json({ error: 'Parameter "model" (non-empty string) is required.' });
     }
 
+    if (isNonGenerativeModel(model)) {
+      return res.status(400).json({ error: 'Selected model is non-generative (e.g., rerank/embedding). Please choose a text generation model.' });
+    }
     const region = process.env.AWS_REGION || 'us-east-1';
     // Optimized path (target language)
     const optimized = await bedrockGenerateText({ text, language, model, region });

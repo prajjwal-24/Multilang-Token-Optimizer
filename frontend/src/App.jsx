@@ -9,6 +9,7 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+  const [toast, setToast] = useState({ visible: false, message: '' })
 
   const languageToCode = {
     chinese: { code: 'zh-CN', label: 'Chinese', savings: 50 },
@@ -23,8 +24,9 @@ function App() {
         const resp = await fetch('http://127.0.0.1:5000/api/bedrock/models')
         const data = await resp.json()
         if (resp.ok && data && Array.isArray(data.models)) {
-          // Filter to text models only (output modalities includes "TEXT")
-          const textModels = data.models.filter(m => (m.outputModalities || []).includes('TEXT'))
+          const textModels = data.models
+            .filter(m => (m.outputModalities || []).includes('TEXT'))
+            .filter(m => !/rerank|embed|embedding/i.test(m.modelId))
           setModels(textModels)
           // Pick a sensible default if none selected
           if (!selectedModel) {
@@ -43,6 +45,13 @@ function App() {
     loadModels()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (toast.visible) {
+      const t = setTimeout(() => setToast({ visible: false, message: '' }), 4000)
+      return () => clearTimeout(t)
+    }
+  }, [toast.visible])
 
   const handleOptimize = async () => {
     try {
@@ -114,7 +123,9 @@ function App() {
         metrics: metricsFromBackend || mockMetrics
       })
     } catch (e) {
-      setError(e.message || 'Something went wrong')
+      const msg = e.message || 'Something went wrong'
+      setError(msg)
+      setToast({ visible: true, message: msg })
     } finally {
       setLoading(false)
     }
@@ -185,9 +196,14 @@ function App() {
         </button>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="error-banner">{error}</div>
+      {/* Error Toast */}
+      {toast.visible && (
+        <div className="toast-container">
+          <div className="toast toast-error">
+            <div className="toast-content">{toast.message}</div>
+            <button className="toast-close" onClick={() => setToast({ visible: false, message: '' })}>✕</button>
+          </div>
+        </div>
       )}
 
       {/* Results */}
