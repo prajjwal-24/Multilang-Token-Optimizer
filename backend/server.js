@@ -136,7 +136,7 @@ async function bedrockGenerateText({ text, language, model, region }) {
       messages: [
         {
           role: 'user',
-          content: [ { text: prompt } ]
+          content: [{ text: prompt }]
         }
       ],
       inferenceConfig: { maxTokens: 512, temperature: 0.2, topP: 0.9 },
@@ -286,12 +286,149 @@ app.post('/api/bedrock/generate-translate', async (req, res) => {
     }
 
     // Pricing (approximate per 1M tokens) - extend as needed for other models
+    // AWS does not provide a pricing API. All pricing information is sourced from:
+    // https://aws.amazon.com/bedrock/pricing/ and may be subject to change.
     function getPricingPerMillion(modelId) {
-      if (modelId.startsWith('anthropic.claude-3-haiku')) {
-        return { input: 0.25, output: 1.25 };
+      // Anthropic Models
+      if (modelId.includes('claude-3-5-sonnet')) {
+        return { input: 3.0, output: 15.0 }; // $3/$15 per 1M tokens
       }
-      // Default conservative placeholders
-      return { input: 0.5, output: 1.5 };
+      if (modelId.includes('claude-3-5-haiku')) {
+        return { input: 0.8, output: 4.0 }; // $0.8/$4 per 1M tokens
+      }
+      if (modelId.includes('claude-3-haiku')) {
+        return { input: 0.25, output: 1.25 }; // $0.25/$1.25 per 1M tokens
+      }
+      if (modelId.includes('claude-3-sonnet')) {
+        return { input: 3.0, output: 15.0 }; // $3/$15 per 1M tokens
+      }
+      if (modelId.includes('claude-3-opus')) {
+        return { input: 15.0, output: 75.0 }; // $15/$75 per 1M tokens
+      }
+      if (modelId.includes('claude-instant')) {
+        return { input: 0.8, output: 2.4 }; // $0.8/$2.4 per 1M tokens
+      }
+      if (modelId.includes('claude-2')) {
+        return { input: 8.0, output: 24.0 }; // $8/$24 per 1M tokens
+      }
+
+      // Amazon Nova Models
+      if (modelId.includes('nova-pro')) {
+        return { input: 0.8, output: 3.2 }; // $0.8/$3.2 per 1M tokens
+      }
+      if (modelId.includes('nova-lite')) {
+        return { input: 0.06, output: 0.24 }; // $0.06/$0.24 per 1M tokens
+      }
+      if (modelId.includes('nova-micro')) {
+        return { input: 0.035, output: 0.14 }; // $0.035/$0.14 per 1M tokens
+      }
+
+      // Amazon Titan Models
+      if (modelId.includes('titan-text-express')) {
+        return { input: 0.8, output: 1.6 }; // $0.8/$1.6 per 1M tokens
+      }
+      if (modelId.includes('titan-text-lite')) {
+        return { input: 0.3, output: 0.4 }; // $0.3/$0.4 per 1M tokens
+      }
+      if (modelId.includes('titan-embed')) {
+        return { input: 0.1, output: 0 }; // Embedding models - input only
+      }
+
+      // Meta Llama Models
+      if (modelId.includes('llama-3-3-70b')) {
+        return { input: 0.99, output: 0.99 }; // $0.99/$0.99 per 1M tokens
+      }
+      if (modelId.includes('llama-3-2-90b')) {
+        return { input: 2.0, output: 2.0 }; // $2/$2 per 1M tokens
+      }
+      if (modelId.includes('llama-3-2-11b')) {
+        return { input: 0.35, output: 1.4 }; // $0.35/$1.4 per 1M tokens
+      }
+      if (modelId.includes('llama-3-2-3b')) {
+        return { input: 0.15, output: 0.6 }; // $0.15/$0.6 per 1M tokens
+      }
+      if (modelId.includes('llama-3-2-1b')) {
+        return { input: 0.1, output: 0.4 }; // $0.1/$0.4 per 1M tokens
+      }
+      if (modelId.includes('llama-3-1-405b')) {
+        return { input: 5.32, output: 16.0 }; // $5.32/$16 per 1M tokens
+      }
+      if (modelId.includes('llama-3-1-70b')) {
+        return { input: 0.99, output: 0.99 }; // $0.99/$0.99 per 1M tokens
+      }
+      if (modelId.includes('llama-3-1-8b')) {
+        return { input: 0.22, output: 0.22 }; // $0.22/$0.22 per 1M tokens
+      }
+      if (modelId.includes('llama-3-70b')) {
+        return { input: 2.65, output: 3.5 }; // $2.65/$3.5 per 1M tokens
+      }
+      if (modelId.includes('llama-3-8b')) {
+        return { input: 0.4, output: 0.6 }; // $0.4/$0.6 per 1M tokens
+      }
+      if (modelId.includes('llama-2-70b')) {
+        return { input: 1.95, output: 2.56 }; // $1.95/$2.56 per 1M tokens
+      }
+      if (modelId.includes('llama-2-13b')) {
+        return { input: 0.75, output: 1.0 }; // $0.75/$1 per 1M tokens
+      }
+
+      // Mistral Models
+      if (modelId.includes('mistral-large-2407')) {
+        return { input: 3.0, output: 9.0 }; // $3/$9 per 1M tokens
+      }
+      if (modelId.includes('mistral-large-2402')) {
+        return { input: 8.0, output: 24.0 }; // $8/$24 per 1M tokens
+      }
+      if (modelId.includes('mixtral-8x7b')) {
+        return { input: 0.45, output: 0.7 }; // $0.45/$0.7 per 1M tokens
+      }
+      if (modelId.includes('mistral-7b')) {
+        return { input: 0.15, output: 0.2 }; // $0.15/$0.2 per 1M tokens
+      }
+
+      // Cohere Models
+      if (modelId.includes('command-r-plus')) {
+        return { input: 2.5, output: 10.0 }; // $2.5/$10 per 1M tokens
+      }
+      if (modelId.includes('command-r')) {
+        return { input: 0.15, output: 0.75 }; // $0.15/$0.75 per 1M tokens
+      }
+      if (modelId.includes('command-light')) {
+        return { input: 0.3, output: 0.6 }; // $0.3/$0.6 per 1M tokens
+      }
+      if (modelId.includes('command')) {
+        return { input: 1.5, output: 2.0 }; // $1.5/$2 per 1M tokens
+      }
+      if (modelId.includes('embed-english') || modelId.includes('embed-multilingual')) {
+        return { input: 0.1, output: 0 }; // Embedding models - input only
+      }
+
+      // AI21 Labs Models
+      if (modelId.includes('jamba-1-5-large')) {
+        return { input: 2.0, output: 8.0 }; // $2/$8 per 1M tokens
+      }
+      if (modelId.includes('jamba-1-5-mini')) {
+        return { input: 0.2, output: 0.4 }; // $0.2/$0.4 per 1M tokens
+      }
+      if (modelId.includes('jurassic-2-ultra')) {
+        return { input: 18.8, output: 18.8 }; // $18.8/$18.8 per 1M tokens
+      }
+      if (modelId.includes('jurassic-2-mid')) {
+        return { input: 12.5, output: 12.5 }; // $12.5/$12.5 per 1M tokens
+      }
+
+      // DeepSeek Models
+      if (modelId.includes('deepseek-r1')) {
+        return { input: 1.35, output: 5.4 }; // $1.35/$5.4 per 1M tokens
+      }
+
+      // Stability AI Models (Image generation - per image pricing)
+      if (modelId.includes('stable-diffusion') || modelId.includes('sdxl')) {
+        return { input: 40.0, output: 0 }; // ~$0.04 per image = $40 per 1M images
+      }
+
+      // Default conservative pricing for unknown models
+      return { input: 1.0, output: 3.0 }; // Conservative fallback
     }
 
     const prices = getPricingPerMillion(model);
@@ -326,7 +463,7 @@ app.post('/api/bedrock/generate-translate', async (req, res) => {
           processingTime: optimized.latencyMs + baseline.latencyMs,
           optimizedLatencyMs: optimized.latencyMs,
           englishLatencyMs: baseline.latencyMs,
-          estimatedLatencyIncrease: baseline.latencyMs > 0 ? `${( (optimized.latencyMs + 0) / baseline.latencyMs ).toFixed(1)}x` : 'n/a'
+          estimatedLatencyIncrease: baseline.latencyMs > 0 ? `${((optimized.latencyMs + 0) / baseline.latencyMs).toFixed(1)}x` : 'n/a'
         },
         quality: {
           estimatedAccuracy: 95,
