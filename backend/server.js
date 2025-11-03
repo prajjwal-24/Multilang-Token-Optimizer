@@ -467,7 +467,7 @@ app.post('/api/bedrock/generate-translate', async (req, res) => {
           processingTime: optimized.latencyMs + baseline.latencyMs,
           optimizedLatencyMs: optimized.latencyMs,
           englishLatencyMs: baseline.latencyMs,
-          estimatedLatencyIncrease: baseline.latencyMs > 0 ? `${((optimized.latencyMs + 0) / baseline.latencyMs).toFixed(1)}x` : 'n/a'
+          estimatedLatencyIncrease: baseline.latencyMs > 0 ? `${((optimized.latencyMs + baseline.latencyMs) / baseline.latencyMs).toFixed(1)}x` : 'n/a'
         }
       }
     });
