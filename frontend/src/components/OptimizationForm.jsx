@@ -33,6 +33,7 @@ const OptimizationForm = ({
             <option value="chinese">🇨🇳 Chinese</option>
             <option value="japanese">🇯🇵 Japanese</option>
             <option value="korean">🇰🇷 Korean</option>
+            <option value="polish">🇵🇱 Polish</option>
           </select>
         </div>
 

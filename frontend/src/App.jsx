@@ -22,7 +22,8 @@ function App() {
   const languageToCode = {
     chinese: { code: 'zh-CN', label: 'Chinese', savings: 50 },
     japanese: { code: 'ja', label: 'Japanese', savings: 70 },
-    korean: { code: 'ko', label: 'Korean', savings: 45 }
+    korean: { code: 'ko', label: 'Korean', savings: 45 },
+    polish: { code: 'pl', label: 'Polish', savings: 35 }
   }
 
   useEffect(() => {

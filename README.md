@@ -11,6 +11,7 @@ TokenWise leverages the token efficiency differences between languages to optimi
 - **Chinese**: ~50% token savings
 - **Japanese**: ~70% token savings  
 - **Korean**: ~45% token savings
+- **Polish**: ~35% token savings
 
 ## 🏗️ Architecture
 
